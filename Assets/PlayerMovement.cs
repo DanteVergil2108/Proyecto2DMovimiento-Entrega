@@ -21,14 +21,22 @@ public class PlayerMovement : MonoBehaviour
     public bool canDoubleJump = false;  // Se activa al tomar el power-up
     private bool doubleJumpAvailable;   // Controla si ya gastó el salto extra en el aire
 
+    [Header("Límite de Caída al Vacío")]
+    public float limiteCaidaY = -10f;    // Si el jugador cae más abajo de este valor en Y, pierde
+
+    private bool juegoTerminado = false; // Evita que se dispare varias veces
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        juegoTerminado = false;
     }
 
     void Update()
     {
+        if (juegoTerminado) return; // Si ya perdimos, no procesamos más movimiento
+
         float movement = Input.GetAxis("Horizontal");
 
         // Detección de suelo
@@ -68,6 +76,12 @@ public class PlayerMovement : MonoBehaviour
                 doubleJumpAvailable = false; // Gasta el doble salto
             }
         }
+
+        // --- DETECCIÓN DE CAÍDA AUTOMÁTICA ---
+        if (transform.position.y < limiteCaidaY)
+        {
+            ActivarGameOver();
+        }
     }
 
     private void Saltar()
@@ -82,6 +96,36 @@ public class PlayerMovement : MonoBehaviour
         Vector3 escala = transform.localScale;
         escala.x *= -1;
         transform.localScale = escala;
+    }
+
+    // --- RECOLECCIÓN DE COLECCIONABLES (CAKE Y FRUTAS) Y POWER-UPS ---
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        // Detecta el objeto Cake o cualquier fruta/objeto con el Tag "Collectible"
+        if (collision.CompareTag("Collectible"))
+        {
+            Debug.Log("Objeto recolectado: " + collision.gameObject.name);
+            Destroy(collision.gameObject); // Se destruye al tocarlo
+        }
+    }
+
+    // Método público para que la caída (o el enemigo cuando está activo) pueda matar al jugador
+    public void ActivarGameOver()
+    {
+        if (juegoTerminado) return;
+        juegoTerminado = true;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.simulated = false;
+        }
+
+        GameOverManager gameOverMgr = Object.FindFirstObjectByType<GameOverManager>();
+        if (gameOverMgr != null)
+        {
+            gameOverMgr.MostrarGameOver();
+        }
     }
 
     private void OnDrawGizmosSelected()

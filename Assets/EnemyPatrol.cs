@@ -88,7 +88,7 @@ public class EnemyPatrol : MonoBehaviour
         }
     }
 
-    // Corrutina que maneja los 3 segundos de inmovilidad, sprite de caparazón y seguridad
+    // Corrutina que maneja los 5 segundos de inmovilidad, sprite de caparazón y seguridad
     IEnumerator StunRoutine()
     {
         isStunned = true;
@@ -131,15 +131,19 @@ public class EnemyPatrol : MonoBehaviour
         // Si choca con el jugador
         if (collision.gameObject.CompareTag("Player"))
         {
-            // Solo mata al jugador SI EL ENEMIGO NO ESTÁ ATURDIDO
-            if (!isStunned)
+            // SI ESTÁ ATURDIDO, NO HACE NADA (Permite que el jugador lo atraviese sin perder)
+            if (isStunned)
             {
-                Debug.Log("¡El enemigo activo tocó al jugador! Reiniciando nivel...");
-                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                Debug.Log("El enemigo está aturdido, el jugador lo atraviesa a salvo.");
+                return;
             }
-            else
+
+            // Si NO está aturdido, activa el Game Over normal
+            Debug.Log("¡El enemigo activo tocó al jugador! Mostrando Game Over...");
+            GameOverManager gameOverMgr = Object.FindFirstObjectByType<GameOverManager>();
+            if (gameOverMgr != null)
             {
-                Debug.Log("El enemigo está aturdido, el jugador lo atraviesa sin sufrir daño.");
+                gameOverMgr.MostrarGameOver();
             }
         }
     }
